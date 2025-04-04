@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,6 +57,10 @@ func walkDir(path string, f func(fname string) error) error {
 }
 
 func TestApp(t *testing.T) {
+	err := godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv
+
+	assert.NoError(t, err)
+
 	cmp := func(fname string) error {
 		fbody, err := os.ReadFile(fname)
 		if err != nil {
