@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"go1f/pkg/server"
 	"log"
+
+	"github.com/OlegLuppov/go_final_project/pkg/server"
 )
 
 func main() {
