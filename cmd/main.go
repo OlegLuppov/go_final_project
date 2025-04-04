@@ -1,17 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
-	"github.com/OlegLuppov/go_final_project/pkg/server"
+	"go1f/config"
+	"go1f/pkg/server"
 )
 
 func main() {
-	fmt.Println("Hello Final Project")
-	err := server.Run()
+	env, err := config.LoadEnv()
+
+	if err != nil {
+		log.Fatalf("LoadEnv: %s", err)
+	}
+
+	err = server.Run(env.TodoPort)
 
 	if err != nil {
 		log.Fatalf("Error server Run: %s", err)
 	}
+
 }

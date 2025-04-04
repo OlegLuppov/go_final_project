@@ -57,9 +57,7 @@ func walkDir(path string, f func(fname string) error) error {
 }
 
 func TestApp(t *testing.T) {
-	err := godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv
-
-	assert.NoError(t, err)
+	godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv, игнорируем ошибку (файла может и не быть)
 
 	cmp := func(fname string) error {
 		fbody, err := os.ReadFile(fname)
