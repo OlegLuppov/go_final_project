@@ -7,7 +7,7 @@ import (
 
 type Environment struct {
 	TodoPort   string `env:"TODO_PORT" env-default:"7540"`
-	TodoDbFile string `env:"TODO_DBFILE" env-default:"./scheduler.db"`
+	TodoDbFile string `env:"TODO_DBFILE" env-default:"pkg/db/scheduler.db"`
 }
 
 // LoadEnv загружает конфигурацию из переменных окружения

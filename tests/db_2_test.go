@@ -2,10 +2,12 @@ package tests
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	_ "modernc.org/sqlite"
 )
@@ -26,15 +28,25 @@ func count(db *sqlx.DB) (int, error) {
 func openDB(t *testing.T) *sqlx.DB {
 	dbfile := DBFile
 	envFile := os.Getenv("TODO_DBFILE")
+
 	if len(envFile) > 0 {
-		dbfile = envFile
+		absPath, err := filepath.Abs("../")
+
+		assert.NoError(t, err)
+
+		dbfile = filepath.Join(absPath, envFile)
 	}
+
 	db, err := sqlx.Connect("sqlite", dbfile)
+
 	assert.NoError(t, err)
 	return db
 }
 
 func TestDB(t *testing.T) {
+
+	godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv, игнорируем ошибку (файла может и не быть)
+
 	db := openDB(t)
 	defer db.Close()
 
