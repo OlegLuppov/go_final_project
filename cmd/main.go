@@ -3,17 +3,17 @@ package main
 import (
 	"log"
 
-	"go1f/config"
-	"go1f/pkg/server"
-
+	"github.com/OlegLuppov/go_final_project/config"
+	"github.com/OlegLuppov/go_final_project/pkg/api"
 	"github.com/OlegLuppov/go_final_project/pkg/db"
+	"github.com/OlegLuppov/go_final_project/pkg/server"
 )
 
 func main() {
 	env, err := config.LoadEnv()
 
 	if err != nil {
-		log.Fatalf("LoadEnv: %s", err)
+		log.Fatalf("error LoadEnv: %s", err)
 	}
 
 	schedulerDb, err := db.Connect(env.TodoDbFile)
@@ -24,10 +24,12 @@ func main() {
 
 	defer schedulerDb.Close()
 
-	err = server.Run(env.TodoPort)
+	router := api.RegisterHandlers()
+
+	err = server.Run(env.TodoPort, router)
 
 	if err != nil {
-		log.Fatalf("Error server Run: %s", err)
+		log.Fatalf("error server Run: %s", err)
 	}
 
 }

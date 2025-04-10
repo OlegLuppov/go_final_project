@@ -30,7 +30,6 @@ replace go1f => ./
 
 require (
 	github.com/go-chi/chi v1.5.5
-	github.com/gobwas/glob v0.2.3
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
 	go1f v0.0.0

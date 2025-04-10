@@ -9,12 +9,10 @@ import (
 
 const webDir = "./web"
 
-func Run(port string) error {
-
-	r := chi.NewRouter()
+func Run(port string, router *chi.Mux) error {
 
 	fs := http.FileServer(http.Dir(webDir))
-	r.Handle("/*", fs)
+	router.Handle("/*", fs)
 
-	return http.ListenAndServe(fmt.Sprintf(":%s", port), r)
+	return http.ListenAndServe(fmt.Sprintf(":%s", port), router)
 }
