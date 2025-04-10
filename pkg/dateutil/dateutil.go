@@ -8,11 +8,11 @@ import (
 )
 
 type SettingsRules struct {
-	Rule        string   // Правило d или y или w или m
-	Days        int      // Дни для правила по дням
-	DaysOfWeek  []string // Дни недели для правила по неделям
-	DaysOfMonth []string // Дни месяца для правила по месяцам
-	Months      []string // Месяцы для правила по месяцам
+	Rule        string                // Правило d или y или w или m
+	Days        int                   // Дни для правила по дням
+	DaysOfWeek  map[time.Weekday]bool // Дни недели для правила по неделям
+	DaysOfMonth []string              // Дни месяца для правила по месяцам
+	Months      []string              // Месяцы для правила по месяцам
 }
 
 const dateLayout = "20060102"
@@ -68,14 +68,9 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 
 	//По неделям
 	if settingsRules.Rule == "w" {
-		daysOfWeek, err := GetDaysOfWeek(settingsRules.DaysOfWeek)
-
-		if err != nil {
-			return "", err
-		}
 
 		for {
-			_, checkWeekDay := daysOfWeek[parseDateStart.Weekday()]
+			_, checkWeekDay := settingsRules.DaysOfWeek[parseDateStart.Weekday()]
 
 			if parseDateStart.After(parseDateNow) && checkWeekDay {
 				break
@@ -87,12 +82,6 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 
 	//По месяцам
 	if settingsRules.Rule == "m" {
-		err := checkMonths(settingsRules)
-
-		if err != nil {
-			return "", err
-		}
-
 		for {
 			checkDay, err := CheckCurrDayMonth(parseDateStart.Day(), parseDateStart.Month(), settingsRules.DaysOfMonth)
 
@@ -115,6 +104,76 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 	}
 
 	return parseDateStart.Format(dateLayout), nil
+}
+
+// Парсит правила и возращат правила в удобном виде и ошибку если правило не верное
+func ParseRepeat(repeat string) (SettingsRules, error) {
+	var SettingsRules = SettingsRules{}
+
+	if len(repeat) == 0 {
+		return SettingsRules, fmt.Errorf("repeat expected a non-empty line , but got an empty one")
+	}
+
+	paramsRepeat := strings.Split(repeat, " ")
+
+	rule, check := checkRules[paramsRepeat[0]]
+
+	if !check {
+		return SettingsRules, fmt.Errorf("repeat expected d or y , but got %s", paramsRepeat[0])
+	}
+
+	if len(paramsRepeat) == 1 && rule != "y" {
+		return SettingsRules, fmt.Errorf("two repeat values expected, but got %s", repeat)
+	}
+
+	if (rule == "w" || rule == "d") && strings.Contains(paramsRepeat[1], "-") {
+		return SettingsRules, fmt.Errorf("expected repeat positive value, but got negative value")
+	}
+
+	SettingsRules.Rule = rule
+
+	// Если правило по дням
+	if rule == "d" {
+		days, err := strconv.Atoi(paramsRepeat[1])
+
+		if err != nil {
+			return SettingsRules, err
+		}
+
+		if days > 400 {
+			return SettingsRules, fmt.Errorf("expected to last no more than 400 days, but got %d", days)
+		}
+
+		SettingsRules.Days = days
+		return SettingsRules, nil
+	}
+
+	// Если правило по неделям
+	if rule == "w" {
+		daysOfWeek, err := GetDaysOfWeek(strings.Split(paramsRepeat[1], ","))
+
+		if err != nil {
+			return SettingsRules, err
+		}
+		SettingsRules.DaysOfWeek = daysOfWeek
+	}
+
+	// Если правило по месяцам
+	if rule == "m" {
+		SettingsRules.DaysOfMonth = strings.Split(paramsRepeat[1], ",")
+
+		if len(paramsRepeat) == 3 {
+			SettingsRules.Months = strings.Split(paramsRepeat[2], ",")
+		}
+
+		err := checkMonths(SettingsRules)
+
+		if err != nil {
+			return SettingsRules, err
+		}
+	}
+
+	return SettingsRules, nil
 }
 
 // Проверка текущего дня месяца на вхождение в правило, возвращает true если правило совпало с текущим днем и ошибку
@@ -171,65 +230,6 @@ func CheckCurrMonth(currMonth time.Month, months []string) (bool, error) {
 	}
 
 	return false, nil
-}
-
-// Парсит правила и возращат правила в удобном виде и ошибку если правило не верное
-func ParseRepeat(repeat string) (SettingsRules, error) {
-	var SettingsRules = SettingsRules{}
-
-	if len(repeat) == 0 {
-		return SettingsRules, fmt.Errorf("repeat expected a non-empty line , but got an empty one")
-	}
-
-	paramsRepeat := strings.Split(repeat, " ")
-
-	rule, check := checkRules[paramsRepeat[0]]
-
-	if !check {
-		return SettingsRules, fmt.Errorf("repeat expected d or y , but got %s", paramsRepeat[0])
-	}
-
-	if len(paramsRepeat) == 1 && rule != "y" {
-		return SettingsRules, fmt.Errorf("two repeat values expected, but got %s", repeat)
-	}
-
-	if (rule == "w" || rule == "d") && strings.Contains(paramsRepeat[1], "-") {
-		return SettingsRules, fmt.Errorf("expected repeat positive value, but got negative value")
-	}
-
-	SettingsRules.Rule = rule
-
-	// Если правило по дням
-	if rule == "d" {
-		days, err := strconv.Atoi(paramsRepeat[1])
-
-		if err != nil {
-			return SettingsRules, err
-		}
-
-		if days > 400 {
-			return SettingsRules, fmt.Errorf("expected to last no more than 400 days, but got %d", days)
-		}
-
-		SettingsRules.Days = days
-		return SettingsRules, nil
-	}
-
-	// Если правило по неделям
-	if rule == "w" {
-		SettingsRules.DaysOfWeek = strings.Split(paramsRepeat[1], ",")
-	}
-
-	// Если правило по месяцам
-	if rule == "m" {
-		SettingsRules.DaysOfMonth = strings.Split(paramsRepeat[1], ",")
-
-		if len(paramsRepeat) == 3 {
-			SettingsRules.Months = strings.Split(paramsRepeat[2], ",")
-		}
-	}
-
-	return SettingsRules, nil
 }
 
 // Проверяет допустимые дни месяца и месяцы и возвращает ошибку если правило не верное
