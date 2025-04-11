@@ -4,8 +4,13 @@ import (
 	"database/sql"
 	"os"
 
+	"github.com/OlegLuppov/go_final_project/models"
 	_ "modernc.org/sqlite"
 )
+
+type SchedulerDb struct {
+	Db *sql.DB
+}
 
 const schema = `
 	CREATE TABLE IF NOT EXISTS scheduler (
@@ -19,7 +24,32 @@ const schema = `
 	CREATE INDEX IF NOT EXISTS date_idx ON scheduler (date);
 `
 
-func Connect(dbFile string) (*sql.DB, error) {
+func (db *SchedulerDb) AddTask(task *models.Task) (int64, error) {
+	var id int64
+
+	res, err := db.Db.Exec(
+		`INSERT INTO scheduler (date,title,comment,repeat) VALUES (:date,:title,:comment,:repeat)`,
+		sql.Named("date", task.Date),
+		sql.Named("title", task.Title),
+		sql.Named("comment", task.Comment),
+		sql.Named("repeat", task.Repeat),
+	)
+
+	if err != nil {
+		return id, err
+	}
+
+	id, err = res.LastInsertId()
+
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
+}
+
+// Подключение к БД
+func Connect(dbFile string) (*SchedulerDb, error) {
 
 	_, err := os.Stat(dbFile)
 
@@ -39,11 +69,11 @@ func Connect(dbFile string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite", dbFile)
 
-	if err := db.Ping(); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		return nil, err
 	}
 
@@ -53,5 +83,5 @@ func Connect(dbFile string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return db, nil
+	return &SchedulerDb{Db: db}, nil
 }

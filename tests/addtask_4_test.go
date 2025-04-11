@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,6 +83,7 @@ type task struct {
 }
 
 func TestAddTask(t *testing.T) {
+	godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv, игнорируем ошибку (файла может и не быть)
 	db := openDB(t)
 	defer db.Close()
 

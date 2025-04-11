@@ -22,9 +22,9 @@ func main() {
 		log.Fatalf("error db Connect: %s", err)
 	}
 
-	defer schedulerDb.Close()
+	defer schedulerDb.Db.Close()
 
-	router := api.RegisterHandlers()
+	router := api.RegisterHandlers(schedulerDb)
 
 	err = server.Run(env.TodoPort, router)
 

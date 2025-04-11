@@ -15,7 +15,7 @@ type SettingsRules struct {
 	Months      []string              // Месяцы для правила по месяцам
 }
 
-const dateLayout = "20060102"
+const DateLayout = "20060102" // Шаблон формата даты
 
 var checkRules = map[string]string{
 	"d": "d",
@@ -27,13 +27,13 @@ var checkRules = map[string]string{
 // Возращает следующую дату в зависимости от правил и ошибку
 func NextDate(now string, dateStart string, repeat string) (string, error) {
 
-	parseDateStart, err := time.Parse(dateLayout, dateStart)
+	parseDateStart, err := time.Parse(DateLayout, dateStart)
 
 	if err != nil {
 		return "", fmt.Errorf("parse date start: %s", err)
 	}
 
-	parseDateNow, err := time.Parse(dateLayout, now)
+	parseDateNow, err := time.Parse(DateLayout, now)
 
 	if err != nil {
 		return "", fmt.Errorf("parse date now: %s", err)
@@ -103,7 +103,7 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 		}
 	}
 
-	return parseDateStart.Format(dateLayout), nil
+	return parseDateStart.Format(DateLayout), nil
 }
 
 // Парсит правила и возращат правила в удобном виде и ошибку если правило не верное
@@ -119,7 +119,7 @@ func ParseRepeat(repeat string) (SettingsRules, error) {
 	rule, check := checkRules[paramsRepeat[0]]
 
 	if !check {
-		return SettingsRules, fmt.Errorf("repeat expected d or y , but got %s", paramsRepeat[0])
+		return SettingsRules, fmt.Errorf("repeat expected d or y or w or m , but got %s", paramsRepeat[0])
 	}
 
 	if len(paramsRepeat) == 1 && rule != "y" {
