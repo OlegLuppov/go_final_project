@@ -28,6 +28,7 @@ func (taskHandler *TaskHandler) NextDateHandler(w http.ResponseWriter, r *http.R
 	nextDate, err := dateutil.NextDate(queryNow, queryDate, queryRepeat)
 
 	if err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -93,17 +94,62 @@ func (taskHandler *TaskHandler) PostTaskHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
+// Обработчик возвращает список задач
+func (taskHandler *TaskHandler) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
+	stringSearch := r.URL.Query().Get("search")
+
+	data, err := taskHandler.db.GetTasks(50, stringSearch)
+
+	if err != nil {
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	if data.Tasks == nil {
+		setSuccessfulGetResponse(w, http.StatusOK, models.TasklList{Tasks: []models.Task{}})
+		return
+	}
+
+	setSuccessfulGetResponse(w, http.StatusOK, *data)
+}
+
 // Отправляет в ответ ошибку в формате json
 func setErrResponse(w http.ResponseWriter, statusCode int, err models.ErrorResponse) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(err)
+	errEncode := json.NewEncoder(w).Encode(err)
+
+	if errEncode != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
+	}
 }
 
+// Отправляет в ответ id задачи в формате json
 func setSuccessfulPostResponse(w http.ResponseWriter, statusCode int, data models.SuccessfullyСreatedResponse) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(data)
+	errEncode := json.NewEncoder(w).Encode(data)
+
+	if errEncode != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Отправляет в ответ id задачи в формате json
+func setSuccessfulGetResponse(w http.ResponseWriter, statusCode int, data models.TasklList) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	errEncode := json.NewEncoder(w).Encode(data)
+
+	if errEncode != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Проверка даты
@@ -111,10 +157,10 @@ func checkDate(task *models.Task) error {
 	now := time.Now()
 
 	if len(task.Date) == 0 {
-		task.Date = now.Format(dateutil.DateLayout)
+		task.Date = now.Format(dateutil.DateLayoutYMD)
 	}
 
-	parseDate, err := time.Parse(dateutil.DateLayout, task.Date)
+	parseDate, err := time.Parse(dateutil.DateLayoutYMD, task.Date)
 
 	if err != nil {
 		return err
@@ -122,9 +168,9 @@ func checkDate(task *models.Task) error {
 
 	if parseDate.Before(now) {
 		if len(task.Repeat) == 0 {
-			task.Date = now.Format(dateutil.DateLayout)
+			task.Date = now.Format(dateutil.DateLayoutYMD)
 		} else {
-			task.Date, err = dateutil.NextDate(now.Format(dateutil.DateLayout), task.Date, task.Repeat)
+			task.Date, err = dateutil.NextDate(now.Format(dateutil.DateLayoutYMD), task.Date, task.Repeat)
 
 			if err != nil {
 				return err
@@ -142,6 +188,7 @@ func RegisterHandlers(db *db.SchedulerDb) *chi.Mux {
 	taskHandler := TaskHandler{db: db}
 
 	router.Get("/api/nextdate", taskHandler.NextDateHandler)
+	router.Get("/api/tasks", taskHandler.GetTasksHandler)
 	router.Post("/api/task", taskHandler.PostTaskHandler)
 
 	return router

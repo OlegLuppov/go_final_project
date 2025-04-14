@@ -1,11 +1,15 @@
 package models
 
 type Task struct {
-	ID      string `json:"id"`      //id задачи
+	ID      string `json:"id"`      // id задачи
 	Date    string `json:"date"`    // дата
 	Title   string `json:"title"`   // заголовок задачи
-	Comment string `json:"comment"` //коментарий к задаче
-	Repeat  string `json:"repeat"`  //Правило повторения
+	Comment string `json:"comment"` // коментарий к задаче
+	Repeat  string `json:"repeat"`  // Правило повторения
+}
+
+type TasklList struct {
+	Tasks []Task `json:"tasks"` // список задач
 }
 
 type SuccessfullyСreatedResponse struct {

@@ -2,9 +2,13 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/OlegLuppov/go_final_project/models"
+	"github.com/OlegLuppov/go_final_project/pkg/dateutil"
 	_ "modernc.org/sqlite"
 )
 
@@ -24,6 +28,7 @@ const schema = `
 	CREATE INDEX IF NOT EXISTS date_idx ON scheduler (date);
 `
 
+// Добавить задачу в БД
 func (db *SchedulerDb) AddTask(task *models.Task) (int64, error) {
 	var id int64
 
@@ -46,6 +51,58 @@ func (db *SchedulerDb) AddTask(task *models.Task) (int64, error) {
 	}
 
 	return id, nil
+}
+
+// Получить список задач
+func (db *SchedulerDb) GetTasks(limit int, stringSearch string) (*models.TasklList, error) {
+	var selectStr string
+	var whereSelect string
+	baseSelect := `SELECT id, date, title, comment, repeat FROM scheduler`
+	paramsSelect := `ORDER BY date LIMIT 0, :limit`
+
+	if len(stringSearch) > 0 {
+		stringSearch = strings.TrimSpace(stringSearch)
+		date, err := time.Parse(dateutil.DateLayoutDMY, stringSearch)
+
+		if err != nil {
+			whereSelect = `WHERE title LIKE '%' || :search || '%' OR comment LIKE '%' || :search || '%'`
+		} else {
+			stringSearch = date.Format(dateutil.DateLayoutYMD)
+			whereSelect = `WHERE date = :search`
+		}
+
+		selectStr = fmt.Sprintf("%s %s %s", baseSelect, whereSelect, paramsSelect)
+	} else {
+		selectStr = fmt.Sprintf("%s %s", baseSelect, paramsSelect)
+	}
+
+	rows, err := db.Db.Query(
+		selectStr,
+		sql.Named("limit", limit),
+		sql.Named("search", stringSearch),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var tasks []models.Task
+
+	for rows.Next() {
+		task := models.Task{}
+
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return &models.TasklList{Tasks: tasks}, nil
 }
 
 // Подключение к БД

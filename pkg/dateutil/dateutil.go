@@ -15,7 +15,10 @@ type SettingsRules struct {
 	Months      []string              // Месяцы для правила по месяцам
 }
 
-const DateLayout = "20060102" // Шаблон формата даты
+const (
+	DateLayoutYMD = "20060102"   // Шаблон формата даты YYYMMDD
+	DateLayoutDMY = "02.01.2006" // Шаблон формата даты DD.MM.YYY
+)
 
 var checkRules = map[string]string{
 	"d": "d",
@@ -27,13 +30,13 @@ var checkRules = map[string]string{
 // Возращает следующую дату в зависимости от правил и ошибку
 func NextDate(now string, dateStart string, repeat string) (string, error) {
 
-	parseDateStart, err := time.Parse(DateLayout, dateStart)
+	parseDateStart, err := time.Parse(DateLayoutYMD, dateStart)
 
 	if err != nil {
 		return "", fmt.Errorf("parse date start: %s", err)
 	}
 
-	parseDateNow, err := time.Parse(DateLayout, now)
+	parseDateNow, err := time.Parse(DateLayoutYMD, now)
 
 	if err != nil {
 		return "", fmt.Errorf("parse date now: %s", err)
@@ -48,7 +51,9 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 	// По дням
 	if settingsRules.Rule == "d" {
 		for {
+
 			parseDateStart = parseDateStart.AddDate(0, 0, settingsRules.Days)
+
 			if parseDateStart.After(parseDateNow) {
 				break
 			}
@@ -103,7 +108,7 @@ func NextDate(now string, dateStart string, repeat string) (string, error) {
 		}
 	}
 
-	return parseDateStart.Format(DateLayout), nil
+	return parseDateStart.Format(DateLayoutYMD), nil
 }
 
 // Парсит правила и возращат правила в удобном виде и ошибку если правило не верное
