@@ -166,7 +166,7 @@ func checkDate(task *models.Task) error {
 		return err
 	}
 
-	if parseDate.Before(now) {
+	if parseDate.Before(now) && task.Date != now.Format(dateutil.DateLayoutYMD) {
 		if len(task.Repeat) == 0 {
 			task.Date = now.Format(dateutil.DateLayoutYMD)
 		} else {
