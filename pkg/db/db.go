@@ -105,6 +105,53 @@ func (db *SchedulerDb) GetTasks(limit int, stringSearch string) (*models.TasklLi
 	return &models.TasklList{Tasks: tasks}, nil
 }
 
+// Получить задачу по id
+func (db *SchedulerDb) GetTaskById(id string) (*models.Task, error) {
+	row := db.Db.QueryRow(
+		`SELECT id, date, title, comment, repeat FROM scheduler WHERE id = :id`,
+		sql.Named("id", id),
+	)
+
+	var task models.Task
+
+	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &task, nil
+}
+
+// Обновить задачу
+func (db *SchedulerDb) UpdateTask(task *models.Task) error {
+
+	res, err := db.Db.Exec(
+		`UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id`,
+		sql.Named("date", task.Date),
+		sql.Named("title", task.Title),
+		sql.Named("comment", task.Comment),
+		sql.Named("repeat", task.Repeat),
+		sql.Named("id", task.ID),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	countRows, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if countRows == 0 {
+		return fmt.Errorf("incorrect id for updating task")
+	}
+
+	return nil
+}
+
 // Подключение к БД
 func Connect(dbFile string) (*SchedulerDb, error) {
 
