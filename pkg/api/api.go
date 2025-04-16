@@ -196,6 +196,89 @@ func (taskHandler *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Reques
 
 }
 
+// Обработчик отметки задачи как выполненная
+func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	if len(id) == 0 {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: "expected non-empty id",
+		})
+
+		return
+	}
+
+	task, err := TaskHandler.db.GetTaskById(id)
+
+	if err != nil {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	if len(task.Repeat) == 0 {
+		err := TaskHandler.db.DeleteTask(id)
+
+		if err != nil {
+			setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Error: err.Error(),
+			})
+
+			return
+		}
+
+		setSuccessfulUpdateResponse(w, http.StatusOK, models.SuccessfullyUpdateResponse{})
+		return
+	}
+
+	nextDate, err := dateutil.NextDate(time.Now().Format(dateutil.DateLayoutYMD), task.Date, task.Repeat)
+
+	if err != nil {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
+	}
+
+	task.Date = nextDate
+
+	err = TaskHandler.db.UpdateDate(task)
+
+	if err != nil {
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Error: err.Error(),
+		})
+	}
+
+	setSuccessfulUpdateResponse(w, http.StatusOK, models.SuccessfullyUpdateResponse{})
+}
+
+// Обработчик на удаление задачи
+func (TaskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	if len(id) == 0 {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: "expected non-empty id",
+		})
+
+		return
+	}
+
+	err := TaskHandler.db.DeleteTask(id)
+
+	if err != nil {
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	setSuccessfulUpdateResponse(w, http.StatusOK, models.SuccessfullyUpdateResponse{})
+}
+
 // Отправляет в ответ ошибку в формате json
 func setErrResponse(w http.ResponseWriter, statusCode int, err models.ErrorResponse) {
 	w.WriteHeader(statusCode)
@@ -295,7 +378,9 @@ func RegisterHandlers(db *db.SchedulerDb) *chi.Mux {
 	router.Get("/api/tasks", taskHandler.GetTasksHandler)
 	router.Get("/api/task", taskHandler.GetTaskById)
 	router.Post("/api/task", taskHandler.PostTaskHandler)
+	router.Post("/api/task/done", taskHandler.TaskDone)
 	router.Put("/api/task", taskHandler.UpdateTask)
+	router.Delete("/api/task", taskHandler.DeleteTask)
 
 	return router
 }

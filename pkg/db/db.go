@@ -152,6 +152,55 @@ func (db *SchedulerDb) UpdateTask(task *models.Task) error {
 	return nil
 }
 
+// Обновить дату у задачи
+func (db *SchedulerDb) UpdateDate(task *models.Task) error {
+	res, err := db.Db.Exec(
+		`UPDATE scheduler SET date = :date WHERE id = :id`,
+		sql.Named("date", task.Date),
+		sql.Named("id", task.ID),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	countRows, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if countRows == 0 {
+		return fmt.Errorf("incorrect id for updating task")
+	}
+
+	return nil
+}
+
+// Удалить задачу
+func (db *SchedulerDb) DeleteTask(id string) error {
+	res, err := db.Db.Exec(
+		`DELETE FROM scheduler WHERE id = :id`,
+		sql.Named("id", id),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	countRows, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if countRows == 0 {
+		return fmt.Errorf("incorrect id for updating task")
+	}
+
+	return nil
+}
+
 // Подключение к БД
 func Connect(dbFile string) (*SchedulerDb, error) {
 
