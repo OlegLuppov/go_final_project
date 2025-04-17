@@ -24,9 +24,9 @@ func main() {
 
 	defer schedulerDb.Db.Close()
 
-	router := api.RegisterHandlers(schedulerDb)
+	router := api.RegisterHandlers(schedulerDb, env)
 
-	err = server.Run(env.TodoPort, router)
+	err = server.Run(env, router)
 
 	if err != nil {
 		log.Fatalf("error server Run: %s", err)

@@ -5,9 +5,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Cтруктура с env для cleanenv с дефолтными значениями, которые применяться если env не определены
 type Environment struct {
-	TodoPort   string `env:"TODO_PORT" env-default:"7540"`
-	TodoDbFile string `env:"TODO_DBFILE" env-default:"pkg/db/scheduler.db"`
+	TodoPort     string `env:"TODO_PORT" env-default:"7540"`
+	TodoDbFile   string `env:"TODO_DBFILE" env-default:"pkg/db/scheduler.db"`
+	TodoPassword string `env:"TODO_PASSWORD"`
 }
 
 // LoadEnv загружает конфигурацию из переменных окружения

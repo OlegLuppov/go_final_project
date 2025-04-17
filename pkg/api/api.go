@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/OlegLuppov/go_final_project/config"
 	"github.com/OlegLuppov/go_final_project/pkg/dateutil"
+	"github.com/OlegLuppov/go_final_project/pkg/middleware"
 
 	"github.com/OlegLuppov/go_final_project/models"
 	"github.com/OlegLuppov/go_final_project/pkg/db"
@@ -16,7 +18,8 @@ import (
 )
 
 type TaskHandler struct {
-	db *db.SchedulerDb
+	db  *db.SchedulerDb
+	env config.Environment
 }
 
 // Обработчик возвращает следубщую дату
@@ -197,7 +200,7 @@ func (taskHandler *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Reques
 }
 
 // Обработчик отметки задачи как выполненная
-func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
+func (taskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
 	if len(id) == 0 {
@@ -208,7 +211,7 @@ func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	task, err := TaskHandler.db.GetTaskById(id)
+	task, err := taskHandler.db.GetTaskById(id)
 
 	if err != nil {
 		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
@@ -219,7 +222,7 @@ func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 	}
 
 	if len(task.Repeat) == 0 {
-		err := TaskHandler.db.DeleteTask(id)
+		err := taskHandler.db.DeleteTask(id)
 
 		if err != nil {
 			setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -243,7 +246,7 @@ func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 
 	task.Date = nextDate
 
-	err = TaskHandler.db.UpdateDate(task)
+	err = taskHandler.db.UpdateDate(task)
 
 	if err != nil {
 		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -255,7 +258,7 @@ func (TaskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 }
 
 // Обработчик на удаление задачи
-func (TaskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+func (taskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
 	if len(id) == 0 {
@@ -266,7 +269,7 @@ func (TaskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := TaskHandler.db.DeleteTask(id)
+	err := taskHandler.db.DeleteTask(id)
 
 	if err != nil {
 		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -277,6 +280,58 @@ func (TaskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Reques
 	}
 
 	setSuccessfulUpdateResponse(w, http.StatusOK, models.SuccessfullyUpdateResponse{})
+}
+
+// Обработчик проверки пароля
+func (taskHandler *TaskHandler) Signin(w http.ResponseWriter, r *http.Request) {
+	if len(taskHandler.env.TodoPassword) == 0 {
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Error: "no password set",
+		})
+		return
+	}
+
+	body := new(models.SigninBody)
+	var buf bytes.Buffer
+
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	if err := json.Unmarshal(buf.Bytes(), body); err != nil {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	if body.Password != taskHandler.env.TodoPassword {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Error: "invalid password",
+		})
+
+		return
+	}
+
+	token, err := middleware.GetJwt(taskHandler.env.TodoPassword, taskHandler.env.TodoPassword)
+
+	if err != nil {
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Error: err.Error(),
+		})
+
+		return
+	}
+
+	setSuccessfulAuthentication(w, http.StatusOK, models.SuccessfulAuthenticationBody{
+		Token: token,
+	})
 }
 
 // Отправляет в ответ ошибку в формате json
@@ -339,6 +394,18 @@ func setSuccessfulGetTaskResponse(w http.ResponseWriter, statusCode int, data mo
 	}
 }
 
+// Отправляет в ответ Данные одной задачи в формате json
+func setSuccessfulAuthentication(w http.ResponseWriter, statusCode int, data models.SuccessfulAuthenticationBody) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	err := json.NewEncoder(w).Encode(data)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // Проверка даты
 func checkDate(task *models.Task) error {
 	now := time.Now()
@@ -369,18 +436,22 @@ func checkDate(task *models.Task) error {
 }
 
 // Регистрация Обработчиков
-func RegisterHandlers(db *db.SchedulerDb) *chi.Mux {
+func RegisterHandlers(db *db.SchedulerDb, env config.Environment) *chi.Mux {
 	router := chi.NewMux()
 
-	taskHandler := TaskHandler{db: db}
+	taskHandler := TaskHandler{db: db, env: env}
 
 	router.Get("/api/nextdate", taskHandler.NextDateHandler)
-	router.Get("/api/tasks", taskHandler.GetTasksHandler)
-	router.Get("/api/task", taskHandler.GetTaskById)
-	router.Post("/api/task", taskHandler.PostTaskHandler)
-	router.Post("/api/task/done", taskHandler.TaskDone)
-	router.Put("/api/task", taskHandler.UpdateTask)
-	router.Delete("/api/task", taskHandler.DeleteTask)
+	router.Get("/api/tasks", middleware.Auth(taskHandler.GetTasksHandler, env))
+	router.Get("/api/task", middleware.Auth(taskHandler.GetTaskById, env))
+
+	router.Post("/api/signin", taskHandler.Signin)
+	router.Post("/api/task", middleware.Auth(taskHandler.PostTaskHandler, env))
+	router.Post("/api/task/done", middleware.Auth(taskHandler.TaskDone, env))
+
+	router.Put("/api/task", middleware.Auth(taskHandler.UpdateTask, env))
+
+	router.Delete("/api/task", middleware.Auth(taskHandler.DeleteTask, env))
 
 	return router
 }

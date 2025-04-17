@@ -14,6 +14,16 @@ type TasklList struct {
 	Tasks []Task `json:"tasks"` // список задач
 }
 
+// Структура запроса пароля
+type SigninBody struct {
+	Password string `json:"password"` // пароль
+}
+
+// Структура ответа при успешной проверке пароля
+type SuccessfulAuthenticationBody struct {
+	Token string `json:"token"` // токен
+}
+
 // Ответ при успешном создании задачи
 type SuccessfullyСreatedResponse struct {
 	Id string `json:"id"`
@@ -24,5 +34,5 @@ type SuccessfullyUpdateResponse struct{}
 
 // Ответ при ошибке
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error string `json:"error"` // сообщение об ошибке
 }
