@@ -319,7 +319,7 @@ func (taskHandler *TaskHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := middleware.GetJwt(taskHandler.env.TodoPassword, taskHandler.env.TodoPassword)
+	token, err := middleware.GetJwt(taskHandler.env.TodoPassword, taskHandler.env.SecretKey)
 
 	if err != nil {
 		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{

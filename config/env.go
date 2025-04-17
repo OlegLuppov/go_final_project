@@ -10,6 +10,7 @@ type Environment struct {
 	TodoPort     string `env:"TODO_PORT" env-default:"7540"`
 	TodoDbFile   string `env:"TODO_DBFILE" env-default:"pkg/db/scheduler.db"`
 	TodoPassword string `env:"TODO_PASSWORD"`
+	SecretKey    string `env:"SECRET_KEY" env-default:"Wfgg11oLrAcasADAS2144AfcascaAsdw"` // Для прода без env-default, или придумать как хранить ключ по другому
 }
 
 // LoadEnv загружает конфигурацию из переменных окружения

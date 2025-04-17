@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/OlegLuppov/go_final_project/config"
+	"github.com/OlegLuppov/go_final_project/models"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -18,35 +19,45 @@ func Auth(next http.HandlerFunc, env config.Environment) http.HandlerFunc {
 			cookie, err := r.Cookie("token")
 
 			if err != nil {
-				setBadAuthentification(w, http.StatusUnauthorized, err.Error())
+				setBadAuthentification(w, http.StatusUnauthorized, models.ErrorResponse{
+					Error: err.Error(),
+				})
 				return
 			}
 
 			if len(cookie.Value) == 0 {
-				setBadAuthentification(w, http.StatusUnauthorized, "token is empty")
+				setBadAuthentification(w, http.StatusUnauthorized, models.ErrorResponse{
+					Error: "token is empty",
+				})
 				return
 			}
 
 			token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
-				return []byte(env.TodoPassword), nil
+				return []byte(env.SecretKey), nil
 			})
 
 			if err != nil || !token.Valid {
-				setBadAuthentification(w, http.StatusUnauthorized, "not a valid token")
+				setBadAuthentification(w, http.StatusUnauthorized, models.ErrorResponse{
+					Error: "not a valid token",
+				})
 				return
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 
 			if !ok {
-				setBadAuthentification(w, http.StatusUnauthorized, "authentification required")
+				setBadAuthentification(w, http.StatusUnauthorized, models.ErrorResponse{
+					Error: "authentification required",
+				})
 				return
 			}
 
 			passHash := fmt.Sprintf("%x", sha256.Sum256([]byte(env.TodoPassword)))
 
 			if claims["hash"] != passHash {
-				setBadAuthentification(w, http.StatusUnauthorized, "password has changed")
+				setBadAuthentification(w, http.StatusUnauthorized, models.ErrorResponse{
+					Error: "password has changed",
+				})
 				return
 			}
 		}
@@ -57,6 +68,11 @@ func Auth(next http.HandlerFunc, env config.Environment) http.HandlerFunc {
 
 // Получить jwt токен
 func GetJwt(password string, secretKey string) (string, error) {
+
+	if len(secretKey) == 0 {
+		return "", fmt.Errorf("secretKey is empty")
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"hash": fmt.Sprintf("%x", sha256.Sum256([]byte(password))),
 	})
@@ -71,7 +87,7 @@ func GetJwt(password string, secretKey string) (string, error) {
 }
 
 // Отправляет в ответ ошибку о том что аутентификация не удалась
-func setBadAuthentification(w http.ResponseWriter, statusCode int, err string) {
+func setBadAuthentification(w http.ResponseWriter, statusCode int, err models.ErrorResponse) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	errEncode := json.NewEncoder(w).Encode(err)
