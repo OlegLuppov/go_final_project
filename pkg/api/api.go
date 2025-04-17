@@ -283,7 +283,7 @@ func (taskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Reques
 }
 
 // Обработчик проверки пароля
-func (taskHandler *TaskHandler) Signin(w http.ResponseWriter, r *http.Request) {
+func (taskHandler *TaskHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	if len(taskHandler.env.TodoPassword) == 0 {
 		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Error: "no password set",
@@ -445,7 +445,7 @@ func RegisterHandlers(db *db.SchedulerDb, env config.Environment) *chi.Mux {
 	router.Get("/api/tasks", middleware.Auth(taskHandler.GetTasksHandler, env))
 	router.Get("/api/task", middleware.Auth(taskHandler.GetTaskById, env))
 
-	router.Post("/api/signin", taskHandler.Signin)
+	router.Post("/api/signin", taskHandler.SignIn)
 	router.Post("/api/task", middleware.Auth(taskHandler.PostTaskHandler, env))
 	router.Post("/api/task/done", middleware.Auth(taskHandler.TaskDone, env))
 

@@ -70,7 +70,7 @@ func GetJwt(password string, secretKey string) (string, error) {
 	return strToken, nil
 }
 
-// Отправляет в ответ ошибку в о то что аутентификация не удалась
+// Отправляет в ответ ошибку о том что аутентификация не удалась
 func setBadAuthentification(w http.ResponseWriter, statusCode int, err string) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
