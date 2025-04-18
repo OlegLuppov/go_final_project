@@ -1,6 +1,6 @@
 module github.com/OlegLuppov/go_final_project
 
-go 1.23.0
+go 1.24.2
 
 require (
 	github.com/jmoiron/sqlx v1.4.0
