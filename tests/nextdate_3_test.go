@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +18,7 @@ type nextDate struct {
 }
 
 func TestNextDate(t *testing.T) {
+	godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv, игнорируем ошибку (файла может и не быть)
 	tbl := []nextDate{
 		{"20240126", "", ""},
 		{"20240126", "k 34", ""},

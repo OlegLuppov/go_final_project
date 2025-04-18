@@ -10,12 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
 func getURL(path string) string {
 	port := Port
 	envPort := os.Getenv("TODO_PORT")
+
 	if len(envPort) > 0 {
 		if eport, err := strconv.ParseInt(envPort, 10, 32); err == nil {
 			port = int(eport)
@@ -56,6 +58,8 @@ func walkDir(path string, f func(fname string) error) error {
 }
 
 func TestApp(t *testing.T) {
+	godotenv.Load("../.env") // Добавил подгрузку переменных окружения, иначе не находит через os.Getenv, игнорируем ошибку (файла может и не быть)
+
 	cmp := func(fname string) error {
 		fbody, err := os.ReadFile(fname)
 		if err != nil {
