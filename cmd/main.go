@@ -16,6 +16,10 @@ func main() {
 		log.Fatalf("error LoadEnv: %s", err)
 	}
 
+	if len(env.SecretKey) == 0 {
+		log.Fatal("env SECRET_KEY is empty")
+	}
+
 	schedulerDb, err := db.Connect(env.TodoDbFile)
 
 	if err != nil {

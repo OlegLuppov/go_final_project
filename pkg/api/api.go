@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -49,46 +50,31 @@ func (taskHandler *TaskHandler) PostTaskHandler(w http.ResponseWriter, r *http.R
 	_, err := buf.ReadFrom(r.Body)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), task); err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if len(task.Title) == 0 {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "the title expected non-empty, but got empty",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "the title expected non-empty, but got empty"})
 		return
 	}
 
 	err = checkDate(task)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	id, err := taskHandler.db.AddTask(task)
 
 	if err != nil {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -104,10 +90,7 @@ func (taskHandler *TaskHandler) GetTasksHandler(w http.ResponseWriter, r *http.R
 	data, err := taskHandler.db.GetTasks(50, stringSearch)
 
 	if err != nil {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -124,20 +107,14 @@ func (taskHandler *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Reque
 	id := r.URL.Query().Get("id")
 
 	if len(id) == 0 {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "task id not passed",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "task id not passed"})
 		return
 	}
 
 	data, err := taskHandler.db.GetTaskById(id)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -152,46 +129,31 @@ func (taskHandler *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Reques
 	_, err := buf.ReadFrom(r.Body)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), newTask); err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if len(newTask.Title) == 0 {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "the title expected non-empty, but got empty",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "the title expected non-empty, but got empty"})
 		return
 	}
 
 	err = checkDate(newTask)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	err = taskHandler.db.UpdateTask(newTask)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -204,20 +166,14 @@ func (taskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 	id := r.URL.Query().Get("id")
 
 	if len(id) == 0 {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "expected non-empty id",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "expected non-empty id"})
 		return
 	}
 
 	task, err := taskHandler.db.GetTaskById(id)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -225,10 +181,7 @@ func (taskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 		err := taskHandler.db.DeleteTask(id)
 
 		if err != nil {
-			setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Error: err.Error(),
-			})
-
+			setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return
 		}
 
@@ -239,9 +192,8 @@ func (taskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 	nextDate, err := dateutil.NextDate(time.Now().Format(dateutil.DateLayoutYMD), task.Date, task.Repeat)
 
 	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return
 	}
 
 	task.Date = nextDate
@@ -249,9 +201,7 @@ func (taskHandler *TaskHandler) TaskDone(w http.ResponseWriter, r *http.Request)
 	err = taskHandler.db.UpdateDate(task)
 
 	if err != nil {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: err.Error(),
-		})
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 	}
 
 	setSuccessfulUpdateResponse(w, http.StatusOK, models.SuccessfullyUpdateResponse{})
@@ -262,20 +212,14 @@ func (taskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Reques
 	id := r.URL.Query().Get("id")
 
 	if len(id) == 0 {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "expected non-empty id",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "expected non-empty id"})
 		return
 	}
 
 	err := taskHandler.db.DeleteTask(id)
 
 	if err != nil {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -285,9 +229,7 @@ func (taskHandler *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Reques
 // Обработчик проверки пароля
 func (taskHandler *TaskHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	if len(taskHandler.env.TodoPassword) == 0 {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: "no password set",
-		})
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: "no password set"})
 		return
 	}
 
@@ -295,43 +237,30 @@ func (taskHandler *TaskHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 
 	_, err := buf.ReadFrom(r.Body)
-	if err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
 
+	if err != nil {
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), body); err != nil {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if body.Password != taskHandler.env.TodoPassword {
-		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Error: "invalid password",
-		})
-
+		setErrResponse(w, http.StatusBadRequest, models.ErrorResponse{Error: "invalid password"})
 		return
 	}
 
 	token, err := middleware.GetJwt(taskHandler.env.TodoPassword, taskHandler.env.SecretKey)
 
 	if err != nil {
-		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Error: err.Error(),
-		})
-
+		setErrResponse(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	setSuccessfulAuthentication(w, http.StatusOK, models.SuccessfulAuthenticationBody{
-		Token: token,
-	})
+	setSuccessfulAuthentication(w, http.StatusOK, models.SuccessfulAuthenticationBody{Token: token})
 }
 
 // Отправляет в ответ ошибку в формате json
@@ -341,8 +270,7 @@ func setErrResponse(w http.ResponseWriter, statusCode int, err models.ErrorRespo
 	errEncode := json.NewEncoder(w).Encode(err)
 
 	if errEncode != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", errEncode)
 	}
 }
 
@@ -353,8 +281,7 @@ func setSuccessfulPostResponse(w http.ResponseWriter, statusCode int, data model
 	err := json.NewEncoder(w).Encode(data)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 
@@ -365,8 +292,7 @@ func setSuccessfulUpdateResponse(w http.ResponseWriter, statusCode int, data mod
 	err := json.NewEncoder(w).Encode(data)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 
@@ -377,8 +303,7 @@ func setSuccessfulGetListResponse(w http.ResponseWriter, statusCode int, data mo
 	err := json.NewEncoder(w).Encode(data)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 
@@ -389,8 +314,7 @@ func setSuccessfulGetTaskResponse(w http.ResponseWriter, statusCode int, data mo
 	err := json.NewEncoder(w).Encode(data)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 
@@ -401,8 +325,7 @@ func setSuccessfulAuthentication(w http.ResponseWriter, statusCode int, data mod
 	err := json.NewEncoder(w).Encode(data)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("failed to encode response: %v", err)
 	}
 }
 

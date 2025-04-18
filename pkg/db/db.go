@@ -102,6 +102,12 @@ func (db *SchedulerDb) GetTasks(limit int, stringSearch string) (*models.TasklLi
 		tasks = append(tasks, task)
 	}
 
+	err = rows.Err()
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.TasklList{Tasks: tasks}, nil
 }
 
