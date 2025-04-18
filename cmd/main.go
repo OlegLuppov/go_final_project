@@ -16,9 +16,10 @@ func main() {
 		log.Fatalf("error LoadEnv: %s", err)
 	}
 
-	if len(env.SecretKey) == 0 {
-		log.Fatal("env SECRET_KEY is empty")
-	}
+	// Для прода не запкскать если нет секретного ключа для подписи токена
+	// if len(env.SecretKey) == 0 {
+	// 	log.Fatal("env SECRET_KEY is empty")
+	// }
 
 	schedulerDb, err := db.Connect(env.TodoDbFile)
 
