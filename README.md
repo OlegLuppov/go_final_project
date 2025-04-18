@@ -28,8 +28,8 @@
 ### Проверка сборки образа и запуска контейнера
 1. Для сборки образа выполните комманду в терминале `docker build -t yours_nikname/todo-service:v1.0.0 .`
 2. Для запуска контейнера выполните следующую комманду:
-    - Если используется дефолтный порт: `docker run -p 7540:7540 -v db:/volume  lupperpuper/todo-service:v1.0.0`
-    - Если задана переменная окружения `TODO_PORT`: `docker run -p yours_port:yours_port -v db:/volume  lupperpuper/todo-service:v1.0.0`
+    - Если используется дефолтный порт: `docker run -p 7540:7540 image_name`
+    - Если задана переменная окружения `TODO_PORT`: `docker run -p yours_port:yours_port image_name`
 3. Перейдите по ссылке `http://localhost:yours_port` если задан `TODO_PORT` или `http://localhost:7540` если не задан.
 4. Попробуйте `Добавить`, `Отредактировать`, `Пометить выполненной`, `Удалить` задачу в браузере.
 
